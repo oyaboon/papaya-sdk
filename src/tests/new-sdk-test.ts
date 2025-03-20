@@ -349,14 +349,6 @@ describe('PapayaSDK Comprehensive Tests', () => {
       expect(result.hash).toEqual('0xPayTxHash');
     });
     
-    it('should liquidate account successfully', async () => {
-      const accountToLiquidate = '0xAccountToLiquidate';
-      
-      const result = await sdk.liquidate(accountToLiquidate);
-      expect(sdk.liquidate).toHaveBeenCalledWith(accountToLiquidate);
-      expect(result.hash).toEqual('0xLiquidateTxHash');
-    });
-    
     // Additional rate encoding tests could be added here if needed
   });
 }); 

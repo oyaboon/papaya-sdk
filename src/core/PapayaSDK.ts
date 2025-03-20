@@ -48,6 +48,40 @@ export class PapayaSDK {
     this.tokenSymbol = options.tokenSymbol || 'USDT';
     this.contractVersion = options.contractVersion || DEFAULT_VERSIONS[this.network];
 
+    // Validate token for the selected network
+    if (!NETWORKS[this.network][this.tokenSymbol as keyof typeof NETWORKS[typeof this.network]]) {
+      console.error(`Token ${this.tokenSymbol} not supported on ${this.network}. Falling back to USDT.`);
+      this.tokenSymbol = 'USDT';
+      
+      // If USDT is also not supported, try USDC
+      if (!NETWORKS[this.network][this.tokenSymbol as keyof typeof NETWORKS[typeof this.network]]) {
+        console.error(`USDT not supported on ${this.network}. Falling back to USDC.`);
+        this.tokenSymbol = 'USDC';
+        
+        // If neither USDT nor USDC is supported, use the first available token
+        if (!NETWORKS[this.network][this.tokenSymbol as keyof typeof NETWORKS[typeof this.network]]) {
+          const availableTokens = Object.keys(NETWORKS[this.network]) as TokenSymbol[];
+          if (availableTokens.length > 0) {
+            this.tokenSymbol = availableTokens[0];
+            console.error(`USDC not supported on ${this.network}. Falling back to ${this.tokenSymbol}.`);
+          } else {
+            throw new Error(`No tokens supported on ${this.network}`);
+          }
+        }
+      }
+    }
+
+    // Validate version
+    const tokenConfigs = NETWORKS[this.network][this.tokenSymbol as keyof typeof NETWORKS[typeof this.network]] as TokenConfig[];
+    const versionConfig = tokenConfigs.find((config: TokenConfig) => config.version === this.contractVersion);
+    
+    if (!versionConfig) {
+      console.error(`Version ${this.contractVersion} not supported for ${this.tokenSymbol} on ${this.network}. Using the latest available version.`);
+      // Use the latest version available
+      const latestConfig = tokenConfigs[tokenConfigs.length - 1];
+      this.contractVersion = latestConfig.version;
+    }
+
     // Set contract address and token address
     const contractAddress = options.contractAddress || 
       this.getContractAddress(this.network, this.tokenSymbol, this.contractVersion);
@@ -84,42 +118,7 @@ export class PapayaSDK {
       network = 'polygon';
     }
 
-    // Validate token
-    if (!NETWORKS[network][tokenSymbol as keyof typeof NETWORKS[typeof network]]) {
-      console.error(`Token ${tokenSymbol} not supported on ${network}. Falling back to USDT.`);
-      tokenSymbol = 'USDT';
-      
-      // If USDT is also not supported, try USDC
-      if (!NETWORKS[network][tokenSymbol as keyof typeof NETWORKS[typeof network]]) {
-        console.error(`USDT not supported on ${network}. Falling back to USDC.`);
-        tokenSymbol = 'USDC';
-        
-        // If neither USDT nor USDC is supported, use the first available token
-        if (!NETWORKS[network][tokenSymbol as keyof typeof NETWORKS[typeof network]]) {
-          const availableTokens = Object.keys(NETWORKS[network]) as TokenSymbol[];
-          if (availableTokens.length > 0) {
-            tokenSymbol = availableTokens[0];
-            console.error(`USDC not supported on ${network}. Falling back to ${tokenSymbol}.`);
-          } else {
-            throw new Error(`No tokens supported on ${network}`);
-          }
-        }
-      }
-    }
-
-    // Validate version
-    const version = contractVersion || DEFAULT_VERSIONS[network];
-    const tokenConfigs = NETWORKS[network][tokenSymbol as keyof typeof NETWORKS[typeof network]] as TokenConfig[];
-    const versionConfig = tokenConfigs.find((config: TokenConfig) => config.version === version);
-    
-    if (!versionConfig) {
-      console.error(`Version ${version} not supported for ${tokenSymbol} on ${network}. Using the latest available version.`);
-      // Use the latest version available
-      const latestConfig = tokenConfigs[tokenConfigs.length - 1];
-      contractVersion = latestConfig.version;
-    }
-
-    // Create SDK instance
+    // Create SDK instance - token validation is now handled in the constructor
     return new PapayaSDK({
       provider,
       network,
@@ -461,35 +460,6 @@ export class PapayaSDK {
   }
 
   /**
-   * Liquidates an account
-   * 
-   * @param account - Account address
-   * @returns Transaction response
-   */
-  async liquidate(account: string): Promise<ethers.TransactionResponse> {
-    if (!this.signer) {
-      throw new Error("Signer is required for liquidate");
-    }
-    
-    return this.contract.liquidate(account);
-  }
-
-  /**
-   * Claims a project ID
-   * 
-   * @param projectOwner - Project owner address (default: signer's address)
-   * @returns Transaction response
-   */
-  async claimProjectId(projectOwner?: string): Promise<ethers.TransactionResponse> {
-    if (!this.signer) {
-      throw new Error("Signer is required for claimProjectId");
-    }
-    
-    const owner = projectOwner || await this.signer.getAddress();
-    return this.contract.claimProjectId(owner);
-  }
-
-  /**
    * Makes a direct payment to a receiver
    * 
    * @param receiver - Recipient address
@@ -505,80 +475,34 @@ export class PapayaSDK {
   }
 
   /**
-   * Sets default settings for a project
+   * Gets the token symbol currently being used by the SDK instance
    * 
-   * @param projectId - Project ID
-   * @param projectFee - Project fee (0-10000, representing 0-100%)
-   * @returns Transaction response
+   * @returns The token symbol (USDT, USDC, or PYUSD)
    */
-  async setDefaultSettings(projectId: number, projectFee: number): Promise<ethers.TransactionResponse> {
-    if (!this.signer) {
-      throw new Error("Signer is required for setDefaultSettings");
-    }
-    
-    const settings = {
-      initialized: true,
-      projectFee
-    };
-    
-    return this.contract.setDefaultSettings(settings, projectId);
+  getTokenSymbol(): TokenSymbol {
+    return this.tokenSymbol;
   }
 
   /**
-   * Sets settings for a specific user on a project
+   * Gets the available tokens for a given network
    * 
-   * @param user - User address
-   * @param projectId - Project ID
-   * @param projectFee - Project fee (0-10000, representing 0-100%)
-   * @returns Transaction response
+   * @param network - The network name
+   * @returns Array of available token symbols for the specified network
    */
-  async setSettingsForUser(user: string, projectId: number, projectFee: number): Promise<ethers.TransactionResponse> {
-    if (!this.signer) {
-      throw new Error("Signer is required for setSettingsForUser");
+  static getAvailableTokens(network: NetworkName): TokenSymbol[] {
+    if (!NETWORKS[network]) {
+      return [];
     }
     
-    const settings = {
-      initialized: true,
-      projectFee
-    };
-    
-    return this.contract.setSettingsForUser(user, settings, projectId);
+    return Object.keys(NETWORKS[network]) as TokenSymbol[];
   }
 
   /**
-   * Gets project settings
+   * Gets all available network names supported by the SDK
    * 
-   * @param projectId - Project ID
-   * @returns Project settings
+   * @returns Array of supported network names
    */
-  async getProjectSettings(projectId: number): Promise<ProjectSettings> {
-    const [initialized, projectFee] = await this.contract.defaultSettings(projectId);
-    
-    return {
-      initialized,
-      projectFee
-    };
-  }
-
-  /**
-   * Gets user settings for a project
-   * 
-   * @param projectId - Project ID
-   * @param account - Account address (default: signer's address)
-   * @returns User settings
-   */
-  async getUserSettings(projectId: number, account?: string): Promise<ProjectSettings> {
-    const address = account || (this.signer ? await this.signer.getAddress() : null);
-    
-    if (!address) {
-      throw new Error("Account address is required");
-    }
-    
-    const [initialized, projectFee] = await this.contract.userSettings(projectId, address);
-    
-    return {
-      initialized,
-      projectFee
-    };
+  static getAvailableNetworks(): NetworkName[] {
+    return Object.keys(NETWORKS) as NetworkName[];
   }
 } 
