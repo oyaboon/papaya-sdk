@@ -581,8 +581,4 @@ export class PapayaSDK {
       projectFee
     };
   }
-
-  private getTokenConfig(network: NetworkName, tokenSymbol: TokenSymbol) {
-    return NETWORKS[network][tokenSymbol as keyof typeof NETWORKS[typeof network]];
-  }
 } 
