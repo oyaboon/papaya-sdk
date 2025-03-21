@@ -27,10 +27,10 @@ export interface Subscription {
  * User information from the Papaya contract
  */
 export interface UserInfo {
-  balance: bigint;
-  incomeRate: bigint;
-  outgoingRate: bigint;
-  updated: bigint;
+  balance: string;
+  incomeRate: string;
+  outgoingRate: string;
+  updated: string;
 }
 
 /**

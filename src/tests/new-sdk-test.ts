@@ -1,6 +1,7 @@
 import { PapayaSDK } from '../core';
 import { NETWORKS, DEFAULT_VERSIONS, NetworkName, TokenSymbol } from '../contracts/networks';
 import { encodeRates, decodeRates, encodeSubscriptionRate } from '../utils/rateEncoding';
+import { RatePeriod } from '../utils/rateConversion';
 import { Provider } from 'ethers';
 
 // Mock PapayaSDK for more controlled testing
@@ -161,11 +162,12 @@ describe('PapayaSDK Comprehensive Tests', () => {
   describe('Subscription Management Tests', () => {
     it('should subscribe successfully', async () => {
       const authorAddress = '0xAuthorAddress';
-      const subscriptionRate = BigInt(123);
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       
-      const result = await sdk.subscribe(authorAddress, subscriptionRate, projectId);
-      expect(sdk.subscribe).toHaveBeenCalledWith(authorAddress, subscriptionRate, projectId);
+      const result = await sdk.subscribe(authorAddress, amount, period, projectId);
+      expect(sdk.subscribe).toHaveBeenCalledWith(authorAddress, amount, period, projectId);
       expect(result.hash).toEqual('0xSubscribeTxHash');
     });
     
@@ -320,12 +322,13 @@ describe('PapayaSDK Comprehensive Tests', () => {
     
     it('should subscribe with BySig successfully', async () => {
       const authorAddress = '0xAuthorAddress';
-      const subscriptionRate = BigInt(123);
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       const deadline = Math.floor(Date.now() / 1000) + 3600;
       
-      const result = await sdk.subscribeBySig(authorAddress, subscriptionRate, projectId, deadline);
-      expect(sdk.subscribeBySig).toHaveBeenCalledWith(authorAddress, subscriptionRate, projectId, deadline);
+      const result = await sdk.subscribeBySig(authorAddress, amount, period, projectId, deadline);
+      expect(sdk.subscribeBySig).toHaveBeenCalledWith(authorAddress, amount, period, projectId, deadline);
       expect(result.hash).toEqual('0xSubscribeBySigTxHash');
     });
     

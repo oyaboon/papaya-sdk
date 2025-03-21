@@ -3,6 +3,7 @@ import { Papaya } from '../contracts/abi';
 import { NETWORKS, DEFAULT_VERSIONS, NetworkName, TokenSymbol } from '../contracts/networks';
 import { PapayaSDKOptions, Subscription, UserInfo, ProjectSettings } from '../types';
 import { encodeRates, decodeRates, encodeSubscriptionRate } from '../utils/rateEncoding';
+import { RatePeriod, convertToSecondRate, convertRatePerSecond } from '../utils/rateConversion';
 
 // Define a TokenConfig type to match the structure in networks.ts
 type TokenConfig = {
@@ -238,14 +239,17 @@ export class PapayaSDK {
    * @param account - Account address (default: signer's address)
    * @returns Account balance
    */
-  async balanceOf(account?: string): Promise<bigint> {
+  async balanceOf(account?: string): Promise<number> {
     const address = account || (this.signer ? await this.signer.getAddress() : null);
     
     if (!address) {
       throw new Error("Account address is required");
     }
     
-    return this.contract.balanceOf(address);
+    const balance = await this.contract.balanceOf(address);
+    const formattedBalance = ethers.formatUnits(balance, 18);
+
+    return parseFloat(formattedBalance);
   }
 
   /**
@@ -261,13 +265,13 @@ export class PapayaSDK {
       throw new Error("Account address is required");
     }
     
-    const [balance, incomeRate, outgoingRate, updated] = await this.contract.users(address);
+    const [rawBalance, rawIncomeRate, rawOutgoingRate, updated] = await this.contract.users(address);
     
     return {
-      balance,
-      incomeRate,
-      outgoingRate,
-      updated
+      balance: ethers.formatUnits(rawBalance, 18),
+      incomeRate: ethers.formatUnits(rawIncomeRate, 18),
+      outgoingRate: ethers.formatUnits(rawOutgoingRate, 18),
+      updated: new Date(Number(updated) * 1000).toISOString(), // Convert timestamp to readable format
     };
   }
 
@@ -283,7 +287,9 @@ export class PapayaSDK {
       throw new Error("Signer is required for deposit");
     }
     
-    return this.contract.deposit(amount, isPermit2);
+    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
+
+    return this.contract.deposit(formatedAmount, isPermit2);
   }
 
   /**
@@ -310,7 +316,9 @@ export class PapayaSDK {
       throw new Error("Signer is required for depositFor");
     }
     
-    return this.contract.depositFor(amount, to, isPermit2);
+    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
+
+    return this.contract.depositFor(formatedAmount, to, isPermit2);
   }
 
   /**
@@ -323,8 +331,9 @@ export class PapayaSDK {
     if (!this.signer) {
       throw new Error("Signer is required for withdraw");
     }
-    
-    return this.contract.withdraw(amount);
+
+    const formatedAmount = ethers.parseUnits(amount.toString(), 18);
+    return this.contract.withdraw(formatedAmount);
   }
 
   /**
@@ -349,46 +358,58 @@ export class PapayaSDK {
     if (!this.signer) {
       throw new Error("Signer is required for withdrawTo");
     }
-    
-    return this.contract.withdrawTo(to, amount);
+
+    const formatedAmount = ethers.parseUnits(amount.toString(), 12);    
+    return this.contract.withdrawTo(to, formatedAmount);
   }
 
   /**
    * Subscribes to an author
    * 
    * @param author - Author address
-   * @param subscriptionRate - Subscription rate (uint96)
+   * @param amount - Subscription amount
+   * @param period - Time period for the subscription rate (second, hour, day, week, month, year)
    * @param projectId - Project ID
    * @returns Transaction response
    */
   async subscribe(
     author: string, 
-    subscriptionRate: bigint, 
+    amount: number | bigint,
+    period: RatePeriod = RatePeriod.MONTH,
     projectId: number
   ): Promise<ethers.TransactionResponse> {
     if (!this.signer) {
       throw new Error("Signer is required for subscribe");
     }
     
-    return this.contract.subscribe(author, subscriptionRate, projectId);
+    // Convert amount to per-second rate based on the period
+    const ratePerSecond = convertRatePerSecond(amount.toString(), period);
+    
+    return this.contract.subscribe(author, ratePerSecond, projectId);
   }
 
   /**
    * Subscribes to an author using BySig
    * 
    * @param author - Author address
-   * @param subscriptionRate - Subscription rate (uint96)
+   * @param amount - Subscription amount
+   * @param period - Time period for the subscription rate (second, hour, day, week, month, year)
    * @param projectId - Project ID
    * @param deadline - Deadline timestamp
    * @returns Transaction response
    */
   async subscribeBySig(
     author: string, 
-    subscriptionRate: bigint, 
+    amount: number | bigint,
+    period: RatePeriod = RatePeriod.MONTH,
     projectId: number, 
     deadline: number
   ): Promise<ethers.TransactionResponse> {
-    return this.callBySig("subscribe", [author, subscriptionRate, projectId], deadline);
+    
+    // Convert amount to per-second rate based on the period
+    const ratePerSecond = convertRatePerSecond(amount.toString(), period);
+    
+    return this.callBySig("subscribe", [author, ratePerSecond, projectId], deadline);
   }
 
   /**
@@ -444,7 +465,7 @@ export class PapayaSDK {
    * @param to - Author address
    * @returns Subscription status and encoded rates
    */
-  async isSubscribed(to: string, from?: string): Promise<{ isSubscribed: boolean; encodedRates: bigint }> {
+  async isSubscribed(to: string, from?: string): Promise<{ isSubscribed: any; incomeRate: number; outgoingRate: number; projectId: number }> {
     const fromAddress = from || (this.signer ? await this.signer.getAddress() : null);
     
     if (!fromAddress) {
@@ -455,7 +476,7 @@ export class PapayaSDK {
     
     return {
       isSubscribed,
-      encodedRates
+      ...decodeRates(encodedRates)
     };
   }
 
@@ -470,8 +491,8 @@ export class PapayaSDK {
     if (!this.signer) {
       throw new Error("Signer is required for pay");
     }
-    
-    return this.contract.pay(receiver, amount);
+    const formatedAmount = ethers.parseUnits(amount.toString(), 12); 
+    return this.contract.pay(receiver, formatedAmount);
   }
 
   /**

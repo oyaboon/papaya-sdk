@@ -1,1 +1,2 @@
-export * from './rateEncoding'; 
+export * from './rateEncoding';
+export * from './rateConversion'; 

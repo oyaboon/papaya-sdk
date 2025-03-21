@@ -206,8 +206,19 @@
                             <input type="text" class="form-control" id="subscribeAuthor" placeholder="Enter author address">
                         </div>
                         <div class="form-group">
-                            <label for="subscribeRate">Subscription Rate (per second)</label>
-                            <input type="number" class="form-control" id="subscribeRate" placeholder="Enter rate">
+                            <label for="subscribeAmount">Subscription Amount</label>
+                            <input type="number" class="form-control" id="subscribeAmount" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label for="subscribePeriod">Time Period</label>
+                            <select class="form-select" id="subscribePeriod">
+                                <option value="second">Per Second</option>
+                                <option value="hour">Per Hour</option>
+                                <option value="day">Per Day</option>
+                                <option value="week">Per Week</option>
+                                <option value="month" selected>Per Month</option>
+                                <option value="year">Per Year</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="subscribeProjectId">Project ID</label>

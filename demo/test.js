@@ -128,8 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         updateStatus('Subscribing...');
         const tx = await sdk.subscribe(
-          TEST_PARAMS.authorAddress, 
-          TEST_PARAMS.subscriptionRate, 
+          TEST_PARAMS.authorAddress,
+          100, // amount
+          'month', // period
           TEST_PARAMS.projectId
         );
         logResult('subscribe', tx);

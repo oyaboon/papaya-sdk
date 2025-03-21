@@ -1,6 +1,7 @@
 import { PapayaSDK } from '../core';
 import { NetworkName, TokenSymbol } from '../contracts/networks';
 import { encodeRates, decodeRates, encodeSubscriptionRate } from '../utils/rateEncoding';
+import { RatePeriod } from '../utils/rateConversion';
 import { Provider } from 'ethers';
 
 // Define a custom mock type for our SDK
@@ -71,28 +72,30 @@ describe('Subscription Functionality', () => {
   
   describe('Subscribe Method', () => {
     it('should call subscribe with correct parameters', async () => {
-      // Using BigInt for subscriptionRate as expected by the contract
-      const subscriptionRate = BigInt(12345);
+      // Using amount and period instead of direct subscriptionRate
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       
-      const tx = await sdk.subscribe('0xAuthorAddress', subscriptionRate, projectId);
+      const tx = await sdk.subscribe('0xAuthorAddress', amount, period, projectId);
       
       // Check that the method was called with correct parameters
-      expect(sdk.subscribe).toHaveBeenCalledWith('0xAuthorAddress', subscriptionRate, projectId);
+      expect(sdk.subscribe).toHaveBeenCalledWith('0xAuthorAddress', amount, period, projectId);
       expect(tx.hash).toEqual('0xSubscribeTxHash');
     });
   });
   
   describe('SubscribeBySig Method', () => {
     it('should call subscribeBySig with correct parameters', async () => {
-      const subscriptionRate = BigInt(12345);
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
       
-      const tx = await sdk.subscribeBySig('0xAuthorAddress', subscriptionRate, projectId, deadline);
+      const tx = await sdk.subscribeBySig('0xAuthorAddress', amount, period, projectId, deadline);
       
       // Check that the subscribeBySig method was called with correct parameters
-      expect(sdk.subscribeBySig).toHaveBeenCalledWith('0xAuthorAddress', subscriptionRate, projectId, deadline);
+      expect(sdk.subscribeBySig).toHaveBeenCalledWith('0xAuthorAddress', amount, period, projectId, deadline);
       expect(tx.hash).toEqual('0xSubscribeBySigTxHash');
     });
   });

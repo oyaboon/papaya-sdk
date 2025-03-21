@@ -1,6 +1,7 @@
 import { PapayaSDK } from '../core';
 import { NETWORKS, DEFAULT_VERSIONS } from '../contracts/networks';
 import { encodeRates, decodeRates, encodeSubscriptionRate } from '../utils/rateEncoding';
+import { RatePeriod } from '../utils/rateConversion';
 import { Provider } from 'ethers';
 
 // We don't want to mock the entire ethers library, but we'll spy on the SDK methods
@@ -122,11 +123,12 @@ describe('PapayaSDK Basic Functionality', () => {
   
   describe('Subscription Management', () => {
     it('should call subscribe with correct parameters', async () => {
-      const subscriptionRate = BigInt(123);
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       
-      await sdk.subscribe('0xAuthorAddress', subscriptionRate, projectId);
-      expect(sdk.subscribe).toHaveBeenCalledWith('0xAuthorAddress', subscriptionRate, projectId);
+      await sdk.subscribe('0xAuthorAddress', amount, period, projectId);
+      expect(sdk.subscribe).toHaveBeenCalledWith('0xAuthorAddress', amount, period, projectId);
     });
     
     it('should call unsubscribe with correct parameters', async () => {
@@ -158,12 +160,13 @@ describe('PapayaSDK Basic Functionality', () => {
     
     it('should call subscribeBySig with correct parameters', async () => {
       const authorAddress = '0xAuthorAddress';
-      const subscriptionRate = BigInt(123);
+      const amount = 100;
+      const period = RatePeriod.MONTH;
       const projectId = 1;
       const deadline = Math.floor(Date.now() / 1000) + 3600;
       
-      await sdk.subscribeBySig(authorAddress, subscriptionRate, projectId, deadline);
-      expect(sdk.subscribeBySig).toHaveBeenCalledWith(authorAddress, subscriptionRate, projectId, deadline);
+      await sdk.subscribeBySig(authorAddress, amount, period, projectId, deadline);
+      expect(sdk.subscribeBySig).toHaveBeenCalledWith(authorAddress, amount, period, projectId, deadline);
     });
   });
   

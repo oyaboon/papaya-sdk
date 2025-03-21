@@ -195,7 +195,7 @@ function init() {
             }
             
             logOutput(`Depositing ${amount} with${usePermit2 ? '' : 'out'} Permit2...`);
-            const tx = await papayaSDK.deposit(ethers.parseUnits(amount, 6), usePermit2);
+            const tx = await papayaSDK.deposit(amount, usePermit2);
             logOutput(`Deposit transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -215,7 +215,7 @@ function init() {
             const deadline = Math.floor(Date.now() / 1000) + parseInt(deadlineSeconds);
             
             logOutput(`Depositing ${amount} using signature with deadline ${deadline}...`);
-            const tx = await papayaSDK.depositBySig(ethers.parseUnits(amount, 6), deadline);
+            const tx = await papayaSDK.depositBySig(amount, deadline);
             logOutput(`Deposit by signature transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -237,7 +237,7 @@ function init() {
             }
             
             logOutput(`Depositing ${amount} for ${toAddress} with${usePermit2 ? '' : 'out'} Permit2...`);
-            const tx = await papayaSDK.depositFor(ethers.parseUnits(amount, 6), toAddress, usePermit2);
+            const tx = await papayaSDK.depositFor(amount, toAddress, usePermit2);
             logOutput(`Deposit for transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -254,7 +254,7 @@ function init() {
             }
             
             logOutput(`Withdrawing ${amount}...`);
-            const tx = await papayaSDK.withdraw(ethers.parseUnits(amount, 6));
+            const tx = await papayaSDK.withdraw(amount);
             logOutput(`Withdraw transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -306,23 +306,24 @@ function init() {
     document.getElementById('subscribeButton').addEventListener('click', async () => {
         try {
             const author = document.getElementById('subscribeAuthor').value;
-            const rate = document.getElementById('subscribeRate').value;
+            const amount = document.getElementById('subscribeAmount').value;
+            const period = document.getElementById('subscribePeriod').value;
             const projectId = document.getElementById('subscribeProjectId').value;
             
             if (!author) {
                 throw new Error('Author address is required');
             }
             
-            if (!rate) {
-                throw new Error('Subscription rate is required');
+            if (!amount) {
+                throw new Error('Subscription amount is required');
             }
             
             if (!projectId) {
                 throw new Error('Project ID is required');
             }
             
-            logOutput(`Subscribing to ${author} with rate ${rate} for project ${projectId}...`);
-            const tx = await papayaSDK.subscribe(author, ethers.parseUnits(rate, 6), parseInt(projectId));
+            logOutput(`Subscribing to ${author} with rate ${amount} per ${period} for project ${projectId}...`);
+            const tx = await papayaSDK.subscribe(author, amount, period, parseInt(projectId));
             logOutput(`Subscribe transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -332,7 +333,8 @@ function init() {
     document.getElementById('subscribeBySigButton').addEventListener('click', async () => {
         try {
             const author = document.getElementById('subscribeAuthor').value;
-            const rate = document.getElementById('subscribeRate').value;
+            const amount = document.getElementById('subscribeAmount').value;
+            const period = document.getElementById('subscribePeriod').value;
             const projectId = document.getElementById('subscribeProjectId').value;
             const deadlineSeconds = document.getElementById('subscribeBySigDeadline').value || 3600;
             
@@ -340,8 +342,8 @@ function init() {
                 throw new Error('Author address is required');
             }
             
-            if (!rate) {
-                throw new Error('Subscription rate is required');
+            if (!amount) {
+                throw new Error('Subscription amount is required');
             }
             
             if (!projectId) {
@@ -351,8 +353,8 @@ function init() {
             // Calculate deadline
             const deadline = Math.floor(Date.now() / 1000) + parseInt(deadlineSeconds);
             
-            logOutput(`Subscribing to ${author} with rate ${rate} for project ${projectId} using signature...`);
-            const tx = await papayaSDK.subscribeBySig(author, ethers.parseUnits(rate, 6), parseInt(projectId), deadline);
+            logOutput(`Subscribing to ${author} with rate ${amount} per ${period} for project ${projectId} using signature...`);
+            const tx = await papayaSDK.subscribeBySig(author, amount, period, parseInt(projectId), deadline);
             logOutput(`Subscribe by signature transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
