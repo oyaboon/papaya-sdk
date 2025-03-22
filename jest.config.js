@@ -4,11 +4,8 @@ const config = {
   testEnvironment: "node",
   bail: false,
   testMatch: [
-    '**/rateEncoding.test.ts',
-    '**/basic-sdk-test.ts', 
-    '**/new-sdk-test.ts',
-    '**/subscriptions.test.ts',
-    '**/projectSettings.test.ts'
+    '**/PapayaSDK.test.ts',
+    '**/rateConversion.test.ts', 
   ],
   // Set a timeout of 10 seconds for tests
   testTimeout: 10000,

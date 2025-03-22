@@ -28,31 +28,12 @@ const PERIOD_TO_SECONDS = {
 };
 
 /**
- * Conversion factors to represent rates in different periods from per-second rate
- * These represent what to multiply the per-second rate by to get the period rate
- */
-const SECONDS_TO_PERIOD = {
-  [RatePeriod.SECOND]: 1,
-  [RatePeriod.HOUR]: 3600,
-  [RatePeriod.DAY]: 86400,
-  [RatePeriod.WEEK]: 604800,
-  [RatePeriod.MONTH]: 2628000,
-  [RatePeriod.YEAR]: 31536000
-};
-
-/**
- * Converts an amount and rate period to a per-second rate
+ * Converts a rate amount to a per-second rate
  * 
- * @param amount - The amount in the specified period
- * @param period - The time period (second, hour, day, week, month, year)
+ * @param amount - The rate amount
+ * @param period - The time period
  * @returns The equivalent per-second rate
  */
-export function convertToSecondRate(amount: number, period: RatePeriod): number {
-  const periodFactor = PERIOD_TO_SECONDS[period];
-  return amount / periodFactor;
-}
-
-
 export function convertRatePerSecond(amount: string, period: RatePeriod): number {
   const amountNum = parseFloat(amount);
   const periodFactor = PERIOD_TO_SECONDS[period];
@@ -64,24 +45,15 @@ export function convertRatePerSecond(amount: string, period: RatePeriod): number
 }
 
 /**
- * Converts a per-second rate to a rate in the specified period
+ * Decodes a bigint value into income rate, outgoing rate, and project ID
  * 
- * @param secondRate - The per-second rate
- * @param period - The target time period (second, hour, day, week, month, year)
- * @returns The rate in the specified period
+ * @param encodedRates - The encoded rates as a bigint
+ * @returns An object containing the decoded incomeRate, outgoingRate, and projectId
  */
-export function convertFromSecondRate(secondRate: number, period: RatePeriod): number {
-  const periodFactor = PERIOD_TO_SECONDS[period];
-  return secondRate * periodFactor;
-}
-
-/**
- * Formats a rate with its period for display
- * 
- * @param amount - The amount
- * @param period - The time period
- * @returns Formatted string (e.g., "10 USDC/month")
- */
-export function formatRate(amount: number, period: RatePeriod, currency: string = 'USDC'): string {
-  return `${amount} ${currency}/${period}`;
+export function decodeRates(encodedRates: bigint): { incomeRate: number; outgoingRate: number; projectId: number } {
+  return {
+    incomeRate: Number(encodedRates & BigInt("0xffffffffffffffff")),
+    outgoingRate: Number((encodedRates >> BigInt(96)) & BigInt("0xffffffffffffffff")),
+    projectId: Number(encodedRates >> BigInt(192)),
+  };
 } 

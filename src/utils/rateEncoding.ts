@@ -28,16 +28,3 @@ export function encodeSubscriptionRate(incomeRate: number, outgoingRate: number)
   );
 }
 
-/**
- * Decodes a bigint value into income rate, outgoing rate, and project ID
- * 
- * @param encodedRates - The encoded rates as a bigint
- * @returns An object containing the decoded incomeRate, outgoingRate, and projectId
- */
-export function decodeRates(encodedRates: bigint): { incomeRate: number; outgoingRate: number; projectId: number } {
-  return {
-    incomeRate: Number(encodedRates & BigInt("0xffffffffffffffff")),
-    outgoingRate: Number((encodedRates >> BigInt(96)) & BigInt("0xffffffffffffffff")),
-    projectId: Number(encodedRates >> BigInt(192)),
-  };
-} 

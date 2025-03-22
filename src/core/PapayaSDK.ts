@@ -2,8 +2,7 @@ import { ethers } from 'ethers';
 import { Papaya } from '../contracts/abi';
 import { NETWORKS, DEFAULT_VERSIONS, NetworkName, TokenSymbol } from '../contracts/networks';
 import { PapayaSDKOptions, Subscription, UserInfo, ProjectSettings } from '../types';
-import { encodeRates, decodeRates, encodeSubscriptionRate } from '../utils/rateEncoding';
-import { RatePeriod, convertToSecondRate, convertRatePerSecond } from '../utils/rateConversion';
+import { RatePeriod, decodeRates, convertRatePerSecond } from '../utils/rateConversion';
 
 // Define a TokenConfig type to match the structure in networks.ts
 type TokenConfig = {
