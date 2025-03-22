@@ -274,7 +274,7 @@ function init() {
             const deadline = Math.floor(Date.now() / 1000) + parseInt(deadlineSeconds);
             
             logOutput(`Withdrawing ${amount} using signature with deadline ${deadline}...`);
-            const tx = await papayaSDK.withdrawBySig(ethers.parseUnits(amount, 6), deadline);
+            const tx = await papayaSDK.withdrawBySig(amount, deadline);
             logOutput(`Withdraw by signature transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);

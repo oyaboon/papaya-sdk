@@ -211,26 +211,116 @@ export class PapayaSDK {
     }
 
     const signerAddress = await this.signer.getAddress();
+    
+    // Get nonce from the contract
     const nonce = await this.contract.bySigAccountNonces(signerAddress);
     
-    const sigData = {
-      traits: 0,
-      data: ethers.AbiCoder.defaultAbiCoder().encode(
-        ["uint256", "uint256"], 
-        [...params, deadline]
-      ),
+    // Use proper domain parameters for EIP-712
+    const chainId = await this.getChainId();
+    const contractAddress = this.contract.getAddress ? 
+      await this.contract.getAddress() : 
+      this.contract.target as string;
+    
+    // Fixed domain values for consistent signature generation
+    const domain = {
+      name: "Papaya", // This must match exactly what the contract expects
+      version: "1",   // Use a fixed version that matches the contract's implementation
+      chainId,
+      verifyingContract: contractAddress,
     };
     
-    const messageHash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["tuple(uint256, bytes)"], 
-        [sigData]
-      )
+    // Define the typed data structure
+    const types = {
+      // The primary type must match what the contract expects
+      SignedCall: [
+        { name: "traits", type: "uint256" },
+        { name: "data", type: "bytes" },
+      ],
+    };
+    
+    // Encode the method call data
+    const callData = this.contract.interface.encodeFunctionData(method, params);
+    
+    // Build the traits with a simple bit-packed value for compatibility
+    const traitsValue = this._buildBySigTraits({
+      nonceType: 0, // Try using Account nonce type (0) instead of Selector (1)
+      deadline: BigInt(deadline),
+      nonce: nonce
+    });
+    
+    // The message to sign
+    const message = {
+      traits: traitsValue,
+      data: callData
+    };
+    
+    // Sign the message using EIP-712
+    console.log("Signing with domain:", domain);
+    console.log("Message:", message);
+    
+    try {
+      // Sign the message using EIP-712 typed data signing
+      const signature = await this.signer.signTypedData(domain, types, message);
+      
+      console.log("Generated signature:", signature);
+      
+      // Call the bySig function with the signed parameters
+      return this.contract.bySig(signerAddress, message, signature);
+    } catch (error: any) {
+      console.error("Error in callBySig:", error);
+      throw new Error(`Failed to execute bySig: ${error.message || String(error)}`);
+    }
+  }
+  
+  /**
+   * Builds the traits value for BySig calls
+   * 
+   * @param nonceType - Nonce type (0 = Account, 1 = Selector, 2 = Unique)
+   * @param deadline - Deadline timestamp
+   * @param relayer - Relayer address (default: zero address)
+   * @param nonce - Nonce value
+   * @returns The traits value as BigInt
+   */
+  private _buildBySigTraits({
+    nonceType = 0,
+    deadline = BigInt(0),
+    relayer = "0x0000000000000000000000000000000000000000",
+    nonce = BigInt(0)
+  }: {
+    nonceType?: number;
+    deadline?: bigint;
+    relayer?: string;
+    nonce?: bigint;
+  } = {}): bigint {
+    if (nonceType > 3) {
+      throw new Error("Wrong nonce type, it should be less than 4");
+    }
+    if (deadline > BigInt("0xffffffffff")) {
+      throw new Error("Wrong deadline, it should be less than 0xffffffffff");
+    }
+    if (relayer.length > 42) {
+      throw new Error("Wrong relayer address, it should be less than 42 symbols");
+    }
+    if (nonce > BigInt("0xffffffffffffffffffffffffffffffff")) {
+      throw new Error("Wrong nonce, it should not be more than 128 bits");
+    }
+
+    return (
+      (BigInt(nonceType) << BigInt(254)) +
+      (deadline << BigInt(208)) +
+      ((BigInt(relayer) & BigInt("0xffffffffffffffffffffff")) << BigInt(128)) +
+      nonce
     );
-    
-    const signature = await this.signer.signMessage(ethers.getBytes(messageHash));
-    
-    return this.contract.bySig(signerAddress, sigData, signature);
+  }
+  
+  /**
+   * Gets the chain ID from the provider
+   * 
+   * @returns The chain ID
+   */
+  private async getChainId(): Promise<number> {
+    const network = await this.provider.getNetwork();
+    return Number(network.chainId);
   }
 
   /**
@@ -300,7 +390,8 @@ export class PapayaSDK {
    * @returns Transaction response
    */
   async depositBySig(amount: bigint | number, deadline: number): Promise<ethers.TransactionResponse> {
-    return this.callBySig("deposit", [amount], deadline);
+    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
+    return this.callBySig("deposit", [formatedAmount, false], deadline);
   }
 
   /**
@@ -333,6 +424,7 @@ export class PapayaSDK {
     }
 
     const formatedAmount = ethers.parseUnits(amount.toString(), 18);
+
     return this.contract.withdraw(formatedAmount);
   }
 
@@ -344,7 +436,10 @@ export class PapayaSDK {
    * @returns Transaction response
    */
   async withdrawBySig(amount: bigint | number, deadline: number): Promise<ethers.TransactionResponse> {
-    return this.callBySig("withdraw", [amount], deadline);
+
+    const formatedAmount = ethers.parseUnits(amount.toString(), 18);
+
+    return this.callBySig("withdraw", [formatedAmount], deadline);
   }
 
   /**
