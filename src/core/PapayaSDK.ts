@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { Papaya } from '../contracts/abi';
 import { NETWORKS, DEFAULT_VERSIONS, NetworkName, TokenSymbol } from '../contracts/networks';
-import { PapayaSDKOptions, Subscription, UserInfo, ProjectSettings } from '../types';
+import { PapayaSDKOptions, Subscription, UserInfo } from '../types';
 import { RatePeriod, decodeRates, convertRatePerSecond } from '../utils/rateConversion';
 
 // Define a TokenConfig type to match the structure in networks.ts
@@ -377,7 +377,6 @@ export class PapayaSDK {
     }
     
     const formatedAmount = ethers.parseUnits(amount.toString(), 6);
-
     return this.contract.deposit(formatedAmount, isPermit2);
   }
 
@@ -407,7 +406,6 @@ export class PapayaSDK {
     }
     
     const formatedAmount = ethers.parseUnits(amount.toString(), 6);
-
     return this.contract.depositFor(formatedAmount, to, isPermit2);
   }
 
@@ -423,7 +421,6 @@ export class PapayaSDK {
     }
 
     const formatedAmount = ethers.parseUnits(amount.toString(), 18);
-
     return this.contract.withdraw(formatedAmount);
   }
 

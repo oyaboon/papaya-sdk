@@ -1,7 +1,7 @@
 /**
  * Utility for handling rate conversions with different time periods
  */
-
+import { ethers } from "ethers";
 /**
  * Enum for time period units used in subscription rates
  */
@@ -56,4 +56,28 @@ export function decodeRates(encodedRates: bigint): { incomeRate: number; outgoin
     outgoingRate: Number((encodedRates >> BigInt(96)) & BigInt("0xffffffffffffffff")),
     projectId: Number(encodedRates >> BigInt(192)),
   };
-} 
+}
+
+/**
+ * Formats an amount string into a bigint using ethers.js
+ * 
+ * @param amount - The amount to format
+ * @param unit - The unit of the amount (e.g. "18" for 18 decimal places)
+ * @returns The formatted bigint amount
+ */
+export function formatInput(amount: string, unit?: string | ethers.Numeric): bigint {
+  const formattedAmount = ethers.parseUnits(amount, unit);
+  return formattedAmount;
+}
+
+/**
+ * Formats an amount bigint into a string using ethers.js
+ * 
+ * @param amount - The amount to format
+ * @param unit - The unit of the amount (e.g. "18" for 18 decimal places)
+ * @returns The formatted string amount
+ */
+export function formatOutput(amount: ethers.BigNumberish, unit?: string | ethers.Numeric): string {
+  const formattedAmount = ethers.formatUnits(amount, unit);
+  return formattedAmount;
+}
