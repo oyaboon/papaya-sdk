@@ -411,6 +411,76 @@ app.listen(PORT, () => {
 });
 ```
 
+### Gasless Deposit Example with curl
+
+```typescript
+// Set variables for easier reuse
+RELAYER_URL="https://your-relayer-service.com/api/relay/deposit"
+CHAIN_ID=137  # Polygon network
+
+// Create the JSON payload
+// This would typically contain the signed transaction data from papaya.depositBySig()
+curl -X POST $RELAYER_URL \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txData": {
+      "from": "0xYourWalletAddress",
+      "amount": "10000000",
+      "deadline": 1719161600,
+      "signature": "0x123abc...signature_data_here",
+      "nonce": 1
+    },
+    "chainId": '$CHAIN_ID'
+  }'
+```
+### Complete Example Workflow
+
+Here's a more complete example showing the entire workflow:
+1. First, you would use the SDK in your application to create the signed transaction:
+
+```typescript
+// In your frontend application
+const amount = formatInput('10', 6); // 10 USDT
+const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+const signedTx = await papaya.depositBySig(amount, deadline);
+
+// Store the transaction data to send to your relayer
+const txData = {
+  from: await signer.getAddress(),
+  amount: amount.toString(),
+  deadline: deadline,
+  signature: signedTx.signature,
+  nonce: signedTx.nonce
+};
+```
+
+2. Then use curl to send this data to your relayer: 
+
+```bash
+curl -X POST https://your-relayer-service.com/api/relay/deposit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txData": {
+      "from": "0x123...yourAddress",
+      "amount": "10000000",
+      "deadline": 1719161600,
+      "signature": "0xabc...signatureData",
+      "nonce": 1
+    },
+    "chainId": 137
+  }'
+```
+
+3. 
+3. The relayer service would respond with the transaction hash:
+
+```json
+{
+  "success": true,
+  "txHash": "0x456...transactionHash"
+}
+```
+
 ### Relayer Security Considerations
 
 When building a relayer service, consider these security measures:
