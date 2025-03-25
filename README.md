@@ -84,13 +84,13 @@ async function getUserInfo() {
 
 Explore the full documentation for detailed information on all available methods and features:
 
-- [Getting Started](.documentation/getting-started.md)
-- [API Reference](.documentation/api-reference.md)
-- [Network Support](.documentation/network-support.md)
-- [Utility Functions](.documentation/utility-functions.md)
-- [Examples](.documentation/examples.md)
-- [TypeScript Types](.documentation/typescript-types.md)
-- [Advanced Usage](.documentation/advanced-usage.md)
+- [Getting Started](./documentation/getting-started.md)
+- [API Reference](./documentation/api-reference.md)
+- [Network Support](./documentation/network-support.md)
+- [Utility Functions](./documentation/utility-functions.md)
+- [Examples](./documentation/examples.md)
+- [TypeScript Types](./documentation/typescript-types.md)
+- [Advanced Usage](./documentation/advanced-usage.md)
 
 ## Support
 
