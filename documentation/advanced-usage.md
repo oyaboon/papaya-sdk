@@ -433,6 +433,7 @@ curl -X POST $RELAYER_URL \
     "chainId": '$CHAIN_ID'
   }'
 ```
+
 ### Complete Example Workflow
 
 Here's a more complete example showing the entire workflow:
@@ -471,7 +472,6 @@ curl -X POST https://your-relayer-service.com/api/relay/deposit \
   }'
 ```
 
-3. 
 3. The relayer service would respond with the transaction hash:
 
 ```json
