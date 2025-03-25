@@ -45,6 +45,19 @@ export function convertRatePerSecond(amount: string, period: RatePeriod): number
 }
 
 /**
+ * Converts a per-second rate to a rate for a given period
+ * 
+ * @param ratePerSecond - The per-second rate
+ * @param period - The time period
+ * @returns The rate for the given period
+ */
+export function convertRateToPeriod(ratePerSecond: number, period: RatePeriod): number {
+  const periodFactor = PERIOD_TO_SECONDS[period];
+  return ratePerSecond * periodFactor;
+}
+
+
+/**
  * Decodes a bigint value into income rate, outgoing rate, and project ID
  * 
  * @param encodedRates - The encoded rates as a bigint
@@ -77,7 +90,7 @@ export function formatInput(amount: string, unit?: string | ethers.Numeric): big
  * @param unit - The unit of the amount (e.g. "18" for 18 decimal places)
  * @returns The formatted string amount
  */
-export function formatOutput(amount: ethers.BigNumberish, unit?: string | ethers.Numeric): string {
+export function formatOutput(amount: ethers.BigNumberish, unit?: string | ethers.Numeric): number {
   const formattedAmount = ethers.formatUnits(amount, unit);
-  return formattedAmount;
+  return Number(formattedAmount);
 }

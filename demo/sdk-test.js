@@ -110,7 +110,8 @@ async function connectWallet() {
         const contractVersion = contractVersionInput.value || undefined;
         
         // Create the SDK instance
-        papayaSDK = PapayaSDK.create(signer, network, token, contractVersion);
+        console.log(Object.keys(p));      
+        papayaSDK = p.PapayaSDK.create(signer, network, token, contractVersion);
         
         // Update UI
         connectionStatus.className = 'alert alert-success';
@@ -166,7 +167,9 @@ function init() {
             logOutput(`Getting balance for ${address || 'connected account'}...`);
             
             const balance = await papayaSDK.balanceOf(address);
-            logOutput(`Balance: ${balance.toString()}`);
+            const formattedBalance = p.formatOutput(BigInt(balance), 18);
+
+            logOutput(`Balance: ${formattedBalance.toString()}`);
         } catch (error) {
             handleError(error);
         }
@@ -178,7 +181,14 @@ function init() {
             logOutput(`Getting user info for ${address || 'connected account'}...`);
             
             const userInfo = await papayaSDK.getUserInfo(address);
-            logOutput(`User Info: ${formatResult(userInfo)}`);
+            const formattedUserInfo = {
+                balance: p.formatOutput(BigInt(userInfo.balance), 18),
+                incomeRate: p.convertRateToPeriod(Number(p.formatOutput(userInfo.incomeRate, 18)), p.RatePeriod.MONTH), // Convert to per-month rate
+                outgoingRate: p.convertRateToPeriod(Number(p.formatOutput(userInfo.outgoingRate, 18)), p.RatePeriod.MONTH), // Convert to per-month rate
+                updated: new Date(Number(userInfo.updated) * 1000).toISOString(), // Convert timestamp to readable format
+            };
+
+            logOutput(`User Info: ${formatResult(formattedUserInfo)}`);
         } catch (error) {
             handleError(error);
         }
@@ -195,7 +205,8 @@ function init() {
             }
             
             logOutput(`Depositing ${amount} with${usePermit2 ? '' : 'out'} Permit2...`);
-            const tx = await papayaSDK.deposit(amount, usePermit2);
+            const formatedAmount = p.formatInput(amount, 6);
+            const tx = await papayaSDK.deposit(formatedAmount, usePermit2);
             logOutput(`Deposit transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -215,7 +226,8 @@ function init() {
             const deadline = Math.floor(Date.now() / 1000) + parseInt(deadlineSeconds);
             
             logOutput(`Depositing ${amount} using signature with deadline ${deadline}...`);
-            const tx = await papayaSDK.depositBySig(amount, deadline);
+            const formatedAmount = p.formatInput(amount, 6);
+            const tx = await papayaSDK.depositBySig(formatedAmount, deadline);
             logOutput(`Deposit by signature transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -237,7 +249,8 @@ function init() {
             }
             
             logOutput(`Depositing ${amount} for ${toAddress} with${usePermit2 ? '' : 'out'} Permit2...`);
-            const tx = await papayaSDK.depositFor(amount, toAddress, usePermit2);
+            const formatedAmount = p.formatInput(amount, 6);
+            const tx = await papayaSDK.depositFor(formatedAmount, toAddress, usePermit2);
             logOutput(`Deposit for transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -254,7 +267,8 @@ function init() {
             }
             
             logOutput(`Withdrawing ${amount}...`);
-            const tx = await papayaSDK.withdraw(amount);
+            const formatedAmount = p.formatInput(amount, 18);
+            const tx = await papayaSDK.withdraw(formatedAmount);
             logOutput(`Withdraw transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -274,7 +288,8 @@ function init() {
             const deadline = Math.floor(Date.now() / 1000) + parseInt(deadlineSeconds);
             
             logOutput(`Withdrawing ${amount} using signature with deadline ${deadline}...`);
-            const tx = await papayaSDK.withdrawBySig(amount, deadline);
+            const formatedAmount = p.formatInput(amount, 18);
+            const tx = await papayaSDK.withdrawBySig(formatedAmount, deadline);
             logOutput(`Withdraw by signature transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -295,7 +310,8 @@ function init() {
             }
             
             logOutput(`Withdrawing ${amount} to ${toAddress}...`);
-            const tx = await papayaSDK.withdrawTo(toAddress, ethers.parseUnits(amount, 6));
+            const formatedAmount = p.formatInput(amount, 18);
+            const tx = await papayaSDK.withdrawTo(toAddress, formatedAmount);
             logOutput(`Withdraw to transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -403,7 +419,13 @@ function init() {
             
             logOutput(`Getting subscriptions for ${address || 'connected account'}...`);
             const subscriptions = await papayaSDK.getSubscriptions(address);
-            logOutput(`Subscriptions: ${formatResult(subscriptions)}`);
+            const formattedSubscriptions = subscriptions.map(sub => ({
+                recipient: sub.recipient,
+                incomeRate: p.convertRateToPeriod(p.formatOutput(sub.incomeRate, 18), p.RatePeriod.MONTH),
+                outgoingRate: p.convertRateToPeriod(p.formatOutput(sub.outgoingRate, 18), p.RatePeriod.MONTH),
+                projectId: sub.projectId
+            }));
+            logOutput(`Subscriptions: ${formatResult(formattedSubscriptions)}`);
         } catch (error) {
             handleError(error);
         }
@@ -420,7 +442,13 @@ function init() {
             
             logOutput(`Checking if ${from || 'connected account'} is subscribed to ${to}...`);
             const result = await papayaSDK.isSubscribed(to, from);
-            logOutput(`Is Subscribed: ${formatResult(result)}`);
+            const formattedResult = {
+                isSubscribed: result.isSubscribed,
+                incomeRate: p.convertRateToPeriod(p.formatOutput(result.incomeRate, 18), p.RatePeriod.MONTH),
+                outgoingRate: p.convertRateToPeriod(p.formatOutput(result.outgoingRate, 18), p.RatePeriod.MONTH),
+                projectId: result.projectId
+            };
+            logOutput(`Is Subscribed: ${formatResult(formattedResult)}`);
         } catch (error) {
             handleError(error);
         }
@@ -441,7 +469,8 @@ function init() {
             }
             
             logOutput(`Paying ${amount} to ${receiver}...`);
-            const tx = await papayaSDK.pay(receiver, ethers.parseUnits(amount, 6));
+            const formatedAmount = p.formatInput(amount, 18);
+            const tx = await papayaSDK.pay(receiver, formatedAmount);
             logOutput(`Payment transaction sent: ${tx.hash}`);
         } catch (error) {
             handleError(error);
@@ -464,9 +493,9 @@ function updateAvailableTokens() {
     
     // Get available tokens for the selected network from the NETWORKS object
     const availableTokens = [];
-    if (typeof PapayaSDK.getAvailableTokens === 'function') {
+    if (typeof p.PapayaSDK.getAvailableTokens === 'function') {
         // If SDK provides this helper method
-        availableTokens.push(...PapayaSDK.getAvailableTokens(network));
+        availableTokens.push(...p.PapayaSDK.getAvailableTokens(network));
     } else {
         // Hardcoded fallback based on our knowledge of the networks configuration
         if (network === 'mainnet') {
@@ -512,9 +541,9 @@ function populateNetworksDropdown() {
     
     // Get available networks from the NETWORKS object
     const availableNetworks = [];
-    if (typeof PapayaSDK.getAvailableNetworks === 'function') {
+    if (typeof p.PapayaSDK.getAvailableNetworks === 'function') {
         // If SDK provides this helper method
-        availableNetworks.push(...PapayaSDK.getAvailableNetworks());
+        availableNetworks.push(...p.PapayaSDK.getAvailableNetworks());
     } else {
         // Hardcoded fallback based on our knowledge of the networks configuration
         availableNetworks.push(

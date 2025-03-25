@@ -19,9 +19,8 @@ module.exports = {
     filename: 'papaya-sdk.umd.js',
     path: path.resolve(__dirname, 'dist'),
     library: {
-      name: 'PapayaSDK',
+      name: 'p',
       type: 'umd',
-      export: 'PapayaSDK',
     },
     globalObject: 'this'
   },

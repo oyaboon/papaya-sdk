@@ -336,9 +336,8 @@ export class PapayaSDK {
     }
     
     const balance = await this.contract.balanceOf(address);
-    const formattedBalance = ethers.formatUnits(balance, 18);
 
-    return parseFloat(formattedBalance);
+    return parseFloat(balance);
   }
 
   /**
@@ -357,10 +356,10 @@ export class PapayaSDK {
     const [rawBalance, rawIncomeRate, rawOutgoingRate, updated] = await this.contract.users(address);
     
     return {
-      balance: ethers.formatUnits(rawBalance, 18),
-      incomeRate: ethers.formatUnits(rawIncomeRate, 18),
-      outgoingRate: ethers.formatUnits(rawOutgoingRate, 18),
-      updated: new Date(Number(updated) * 1000).toISOString(), // Convert timestamp to readable format
+      balance: rawBalance,
+      incomeRate: rawIncomeRate,
+      outgoingRate: rawOutgoingRate,
+      updated: updated
     };
   }
 
@@ -377,7 +376,7 @@ export class PapayaSDK {
     }
     
     const formatedAmount = ethers.parseUnits(amount.toString(), 6);
-    return this.contract.deposit(formatedAmount, isPermit2);
+    return this.contract.deposit(amount, isPermit2);
   }
 
   /**
@@ -388,8 +387,7 @@ export class PapayaSDK {
    * @returns Transaction response
    */
   async depositBySig(amount: bigint | number, deadline: number): Promise<ethers.TransactionResponse> {
-    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
-    return this.callBySig("deposit", [formatedAmount, false], deadline);
+    return this.callBySig("deposit", [amount, false], deadline);
   }
 
   /**
@@ -405,8 +403,7 @@ export class PapayaSDK {
       throw new Error("Signer is required for depositFor");
     }
     
-    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
-    return this.contract.depositFor(formatedAmount, to, isPermit2);
+    return this.contract.depositFor(amount, to, isPermit2);
   }
 
   /**
@@ -420,8 +417,7 @@ export class PapayaSDK {
       throw new Error("Signer is required for withdraw");
     }
 
-    const formatedAmount = ethers.parseUnits(amount.toString(), 18);
-    return this.contract.withdraw(formatedAmount);
+    return this.contract.withdraw(amount);
   }
 
   /**
@@ -432,10 +428,7 @@ export class PapayaSDK {
    * @returns Transaction response
    */
   async withdrawBySig(amount: bigint | number, deadline: number): Promise<ethers.TransactionResponse> {
-
-    const formatedAmount = ethers.parseUnits(amount.toString(), 18);
-
-    return this.callBySig("withdraw", [formatedAmount], deadline);
+    return this.callBySig("withdraw", [amount], deadline);
   }
 
   /**
@@ -449,9 +442,8 @@ export class PapayaSDK {
     if (!this.signer) {
       throw new Error("Signer is required for withdrawTo");
     }
-
-    const formatedAmount = ethers.parseUnits(amount.toString(), 12);    
-    return this.contract.withdrawTo(to, formatedAmount);
+   
+    return this.contract.withdrawTo(to, amount);
   }
 
   /**
@@ -582,8 +574,8 @@ export class PapayaSDK {
     if (!this.signer) {
       throw new Error("Signer is required for pay");
     }
-    const formatedAmount = ethers.parseUnits(amount.toString(), 12); 
-    return this.contract.pay(receiver, formatedAmount);
+    
+    return this.contract.pay(receiver, amount);
   }
 
   /**
