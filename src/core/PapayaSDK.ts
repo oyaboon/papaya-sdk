@@ -375,7 +375,6 @@ export class PapayaSDK {
       throw new Error("Signer is required for deposit");
     }
     
-    const formatedAmount = ethers.parseUnits(amount.toString(), 6);
     return this.contract.deposit(amount, isPermit2);
   }
 

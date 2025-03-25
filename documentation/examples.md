@@ -197,7 +197,7 @@ This example demonstrates how to build a simple creator subscription platform us
 // CreatorProfile.tsx
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { PapayaSDK, RatePeriod } from '@papaya_fi/sdk';
+import { PapayaSDK, RatePeriod, formatInput, formatOutput, convertRateToPeriod } from '@papaya_fi/sdk';
 
 interface CreatorProfileProps {
   creatorAddress: string;
@@ -880,9 +880,9 @@ function SubscriptionDashboard() {
       
       <div className="user-info">
         <h2>Account Information</h2>
-        <p>Balance: {userInfo.balance} USDT</p>
-        <p>Total Income Rate: {userInfo.incomeRate} per second</p>
-        <p>Total Outgoing Rate: {userInfo.outgoingRate} per second</p>
+        <p>Balance: {formatOutput(BigInt(userInfo.balance), 18)} USDT</p>
+        <p>Total Income Rate: {convertRateToPeriod(Number(formatOutput(userInfo.incomeRate, 18)), RatePeriod.MONTH)} per month</p>
+        <p>Total Outgoing Rate: {convertRateToPeriod(Number(formatOutput(userInfo.outgoingRate, 18)), RatePeriod.MONTH)} per month</p>
         
         <div className="actions">
           <button onClick={handleDeposit}>Deposit</button>

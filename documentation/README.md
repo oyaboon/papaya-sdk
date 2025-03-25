@@ -13,6 +13,7 @@ The Papaya SDK provides a simple and efficient way to interact with the Papaya P
 - Multiple contract version support
 - BySig methods for gasless transactions
 - Comprehensive transaction handling
+- Utility functions for rate conversions and data formatting
 
 ## Installation
 
@@ -26,7 +27,7 @@ yarn add @papaya_fi/sdk
 
 ```typescript
 import { ethers } from 'ethers';
-import { PapayaSDK } from '@papaya_fi/sdk';
+import { PapayaSDK, formatOutput, convertRateToPeriod, RatePeriod } from '@papaya_fi/sdk';
 
 // Create an Ethereum provider
 const provider = new ethers.JsonRpcProvider('YOUR_RPC_URL');
@@ -44,8 +45,10 @@ const papaya = PapayaSDK.create(
 
 // Now you can use the SDK to interact with the Papaya Protocol
 async function getBalance() {
-  const balance = await papaya.balanceOf();
-  console.log(`Your balance: ${balance}`);
+  const rawBalance = await papaya.balanceOf();
+  // Convert raw balance to readable format
+  const readableBalance = formatOutput(BigInt(rawBalance), 18);
+  console.log(`Your balance: ${readableBalance} USDT`);
 }
 
 // Example subscription
@@ -57,6 +60,24 @@ async function subscribeToAuthor() {
   await tx.wait();
   console.log('Successfully subscribed!');
 }
+
+// Example getting user info with rate conversion
+async function getUserInfo() {
+  const userInfo = await papaya.getUserInfo();
+  
+  // Convert raw blockchain data to human-readable format
+  const formattedInfo = {
+    balance: formatOutput(BigInt(userInfo.balance), 18),
+    // Convert per-second rates to monthly rates
+    incomeRate: convertRateToPeriod(Number(formatOutput(userInfo.incomeRate, 18)), RatePeriod.MONTH),
+    outgoingRate: convertRateToPeriod(Number(formatOutput(userInfo.outgoingRate, 18)), RatePeriod.MONTH),
+    updated: new Date(Number(userInfo.updated) * 1000).toISOString()
+  };
+  
+  console.log(`Balance: ${formattedInfo.balance} USDT`);
+  console.log(`Monthly income: ${formattedInfo.incomeRate} USDT`);
+  console.log(`Monthly outgoing: ${formattedInfo.outgoingRate} USDT`);
+}
 ```
 
 ## Documentation
@@ -66,6 +87,7 @@ Explore the full documentation for detailed information on all available methods
 - [Getting Started](./getting-started.md)
 - [API Reference](./api-reference.md)
 - [Network Support](./network-support.md)
+- [Utility Functions](./utility-functions.md)
 - [Examples](./examples.md)
 - [TypeScript Types](./typescript-types.md)
 - [Advanced Usage](./advanced-usage.md)

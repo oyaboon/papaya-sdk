@@ -60,7 +60,13 @@ const signer = await provider.getSigner();
 Once you have a provider or signer, you can create a Papaya SDK instance:
 
 ```typescript
-import { PapayaSDK } from '@papaya_fi/sdk';
+import { 
+  PapayaSDK, 
+  RatePeriod, 
+  formatInput, 
+  formatOutput, 
+  convertRateToPeriod 
+} from '@papaya_fi/sdk';
 
 // With a signer (for transactions)
 const papaya = PapayaSDK.create(signer, 'polygon', 'USDT');
@@ -87,12 +93,15 @@ async function checkBalance() {
   try {
     // Check your own balance
     const myBalance = await papaya.balanceOf();
-    console.log(`My balance: ${myBalance}`);
+    // Format the balance for display (converts from raw blockchain format)
+    const formattedBalance = formatOutput(BigInt(myBalance), 18);
+    console.log(`My balance: ${formattedBalance} USDT`);
     
     // Check another account's balance
     const otherAddress = '0x...';
     const otherBalance = await papaya.balanceOf(otherAddress);
-    console.log(`Other account balance: ${otherBalance}`);
+    const formattedOtherBalance = formatOutput(BigInt(otherBalance), 18);
+    console.log(`Other account balance: ${formattedOtherBalance} USDT`);
   } catch (error) {
     console.error('Error checking balance:', error);
   }
@@ -102,10 +111,13 @@ async function checkBalance() {
 ### Depositing Funds
 
 ```typescript
-async function depositFunds() {
+async function depositFunds(amount) {
   try {
-    // Deposit 100 tokens
-    const tx = await papaya.deposit(100);
+    // Format amount for blockchain transaction (converts to wei/smallest unit)
+    const formattedAmount = formatInput(amount, 18);
+    
+    // Deposit tokens
+    const tx = await papaya.deposit(formattedAmount);
     console.log('Transaction sent:', tx.hash);
     
     // Wait for transaction to be mined
@@ -115,6 +127,9 @@ async function depositFunds() {
     console.error('Error depositing funds:', error);
   }
 }
+
+// Example: Deposit 100 USDT
+depositFunds(100);
 ```
 
 ### Subscribing to a Creator
@@ -146,7 +161,13 @@ async function checkSubscriptions() {
     
     console.log('My subscriptions:');
     subscriptions.forEach(sub => {
-      console.log(`- To: ${sub.recipient}, Rate: ${sub.outgoingRate}, Project ID: ${sub.projectId}`);
+      // Convert the per-second rate to monthly rate for display
+      const monthlyRate = convertRateToPeriod(
+        Number(formatOutput(sub.outgoingRate, 18)), 
+        RatePeriod.MONTH
+      );
+      
+      console.log(`- To: ${sub.recipient}, Rate: ${monthlyRate} USDT/month, Project ID: ${sub.projectId}`);
     });
     
     // Check if subscribed to a specific creator
@@ -154,7 +175,13 @@ async function checkSubscriptions() {
     const subInfo = await papaya.isSubscribed(creatorAddress);
     
     if (subInfo.isSubscribed) {
-      console.log(`Subscribed to ${creatorAddress} with rate: ${subInfo.outgoingRate}`);
+      // Convert per-second rate to monthly rate for display
+      const monthlyRate = convertRateToPeriod(
+        Number(formatOutput(subInfo.outgoingRate, 18)), 
+        RatePeriod.MONTH
+      );
+      
+      console.log(`Subscribed to ${creatorAddress} with rate: ${monthlyRate} USDT/month`);
     } else {
       console.log(`Not subscribed to ${creatorAddress}`);
     }
@@ -169,17 +196,27 @@ async function checkSubscriptions() {
 The Papaya SDK includes comprehensive error handling. It's recommended to always wrap your calls in try/catch blocks:
 
 ```typescript
-try {
-  const tx = await papaya.withdraw(50);
-  await tx.wait();
-  console.log('Withdrawal successful');
-} catch (error) {
-  if (error.message.includes('insufficient funds')) {
-    console.error('You do not have enough funds to withdraw');
-  } else {
-    console.error('Error during withdrawal:', error);
+import { formatInput } from '@papaya_fi/sdk';
+
+async function withdrawFunds(amount) {
+  try {
+    // Format amount for blockchain transaction
+    const formattedAmount = formatInput(amount, 18);
+    
+    const tx = await papaya.withdraw(formattedAmount);
+    await tx.wait();
+    console.log('Withdrawal successful');
+  } catch (error) {
+    if (error.message.includes('insufficient funds')) {
+      console.error('You do not have enough funds to withdraw');
+    } else {
+      console.error('Error during withdrawal:', error);
+    }
   }
 }
+
+// Example: Withdraw 50 USDT
+withdrawFunds(50);
 ```
 
 ## Next Steps
