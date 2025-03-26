@@ -19,10 +19,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Increment patch version
+        run: npm version patch --no-git-tag-version
+
       - name: Build package
         run: npm run build
 
       - name: Publish to npm
         run: npm publish --access public --tag latest
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
