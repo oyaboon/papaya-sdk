@@ -1,30 +1,52 @@
 {
-  "name": "papaya-sdk",
-  "version": "0.1.0",
+  "name": "@papaya_fi/sdk",
+  "version": "1.0.0",
   "description": "SDK for interacting with the Papaya Protocol",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "documentation/"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run copy-docs",
     "build-demo": "webpack --config demo/webpack.config.js",
     "demo": "npm run build-demo && npx http-server demo -o",
-    "postinstall": "node demo/postinstall.js"
+    "prepublishOnly": "npm run test",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags",
+    "copy-docs": "node scripts/copy-docs.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/papaya-fi/sdk.git"
   },
   "keywords": [
     "papaya",
     "protocol",
     "sdk",
     "ethereum",
-    "blockchain"
+    "blockchain",
+    "subscriptions",
+    "payments"
   ],
-  "author": "",
+  "author": "Papaya Protocol",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/papaya-fi/sdk/issues"
+  },
+  "homepage": "https://github.com/papaya-fi/sdk#readme",
   "dependencies": {
     "@reown/appkit": "^1.7.0",
+    "ethers": "^6.0.0"
+  },
+  "peerDependencies": {
     "ethers": "^6.0.0"
   },
   "devDependencies": {

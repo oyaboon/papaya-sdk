@@ -1,0 +1,81 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version increment type (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+      custom_version:
+        description: 'Custom version (if specified, overrides version_type)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        if: ${{ !inputs.skip_tests }}
+        run: npm test
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update version (Custom)
+        if: ${{ inputs.custom_version != '' }}
+        run: npm version ${{ inputs.custom_version }} --no-git-tag-version
+
+      - name: Update version (Standard)
+        if: ${{ inputs.custom_version == '' }}
+        run: npm version ${{ inputs.version_type }} --no-git-tag-version
+
+      - name: Build package
+        run: npm run build
+
+      - name: Copy documentation
+        run: npm run copy-docs
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Get version from package.json
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Commit version changes
+        run: |
+          git add package.json package-lock.json
+          git commit -m "Release v${{ steps.package-version.outputs.version }}"
+          git tag -a "v${{ steps.package-version.outputs.version }}" -m "Release v${{ steps.package-version.outputs.version }}"
+          git push --follow-tags 

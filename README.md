@@ -91,6 +91,7 @@ Explore the full documentation for detailed information on all available methods
 - [Examples](./documentation/examples.md)
 - [TypeScript Types](./documentation/typescript-types.md)
 - [Advanced Usage](./documentation/advanced-usage.md)
+- [Publishing Guide](./documentation/publish.md)
 
 ## Support
 
