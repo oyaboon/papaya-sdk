@@ -2,11 +2,6 @@ name: Publish to npm
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Package version (e.g., 1.0.0)'
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -24,15 +19,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Set version directly
-        run: |
-          npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
-          echo "Updated version to ${{ inputs.version }}"
+      - name: Auto-increment patch version
+        run: npm version patch --no-git-tag-version
 
       - name: Build package
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
