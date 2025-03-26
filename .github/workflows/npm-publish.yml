@@ -18,6 +18,10 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        
+      # Disable any scripts that might try to interact with git
+      - name: Update npm config to skip git operations
+        run: npm config set scripts.postversion ""
 
       - name: Auto-increment patch version
         run: npm version patch --no-git-tag-version
